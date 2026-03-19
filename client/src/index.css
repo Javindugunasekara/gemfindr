@@ -642,7 +642,7 @@ h1,h2,h3{ color:#ffffff; letter-spacing:-.3px; }
 .chip{padding:8px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.10);cursor:pointer;font-weight:800;font-size:12px;color:rgba(255,255,255,.90);}
 .chip:hover{background:rgba(255,255,255,.14);}
 
-/* -------- Professional Topbar -------- */
+/* -------- Header -------- */
 .topbar{
   position: sticky;
   top: 0;
