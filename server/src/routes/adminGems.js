@@ -1,11 +1,13 @@
 const express = require("express");
 const pool = require("../db");
-const adminAuth = require("../middleware/adminAuth");
 const multer = require("multer");
 const path = require("path");
+const { requireAdmin } = require("../middleware/auth"); // ✅ JWT admin middleware
 
 const router = express.Router();
-router.use(adminAuth);
+
+// ✅ protect everything in this router with admin JWT
+router.use(requireAdmin);
 
 // ---- Multer config ----
 const storage = multer.diskStorage({
@@ -106,7 +108,7 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-// ✅ POST /api/admin/gems/:id/image  (upload image file)
+// POST /api/admin/gems/:id/image  (upload image file)
 router.post("/:id/image", upload.single("image"), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -115,10 +117,10 @@ router.post("/:id/image", upload.single("image"), async (req, res, next) => {
     // Save relative URL in DB
     const imageUrl = `/uploads/${req.file.filename}`;
 
-    const [result] = await pool.query(
-      "UPDATE gems SET image_url = ? WHERE id = ?",
-      [imageUrl, id]
-    );
+    const [result] = await pool.query("UPDATE gems SET image_url = ? WHERE id = ?", [
+      imageUrl,
+      id,
+    ]);
 
     if (result.affectedRows === 0) return res.status(404).json({ message: "Gem not found" });
 

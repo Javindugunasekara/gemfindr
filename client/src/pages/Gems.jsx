@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import HeroHeader from "../components/HeroHeader";
+import { useAuth } from "../auth/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Gems() {
+  const { userAuthHeader } = useAuth();
+
   const [gems, setGems] = useState([]);
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    fetch(`${API}/api/gems`)
+    fetch(`${API}/api/gems`, {
+      headers: { ...userAuthHeader() },
+    })
       .then((r) => r.json())
       .then(setGems)
       .catch(console.error);
@@ -33,7 +38,6 @@ export default function Gems() {
         right={<span className="badge blue">{filtered.length} results</span>}
       />
 
-      {/* Search bar glass */}
       <div className="glass-card admin-section">
         <div className="row">
           <input
@@ -43,14 +47,12 @@ export default function Gems() {
             placeholder="Search by name, type, color, origin..."
             style={{ maxWidth: 520 }}
           />
-
           <button className="button secondary" onClick={() => setQ("")}>
             Clear
           </button>
         </div>
       </div>
 
-      {/* Cards */}
       <div className="grid grid-auto" style={{ marginTop: 14 }}>
         {filtered.map((g) => (
           <div key={g.id} className="glass-card gem-card">
@@ -73,7 +75,6 @@ export default function Gems() {
                 <div><b>Origin:</b> {g.origin || "-"}</div>
               </div>
 
-              {/* short preview text */}
               {g.description && (
                 <div className="gem-desc">
                   {String(g.description).slice(0, 100)}

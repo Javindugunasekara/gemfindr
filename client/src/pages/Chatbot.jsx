@@ -1,15 +1,38 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import HeroHeader from "../components/HeroHeader";
+import { useAuth } from "../auth/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const STORAGE = window.sessionStorage;
+const STORAGE_KEY = "gemfindr_chat_v1";
+
+function safeParse(json, fallback) {
+  try {
+    const v = JSON.parse(json);
+    return v ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export default function Chatbot() {
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text: "Hi! Ask me about gems or Market locations.\nTry: “available gems”, “Blue Sapphire”, “available locations”.",
-    },
-  ]);
+  const { userAuthHeader } = useAuth();
+
+  const defaultMessages = useMemo(
+    () => [
+      {
+        role: "assistant",
+        text: "Hi! Ask me about gems or gem locations.\nTry: “available gems”, “Blue Sapphire”, “shops”, “available locations”.",
+      },
+    ],
+    []
+  );
+
+  const [messages, setMessages] = useState(() => {
+    const saved = STORAGE.getItem(STORAGE_KEY);
+    const parsed = saved ? safeParse(saved, null) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed : defaultMessages;
+  });
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -18,8 +41,19 @@ export default function Chatbot() {
   const inputRef = useRef(null);
 
   useEffect(() => {
+    const trimmed = messages.slice(-60);
+    STORAGE.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+  }, [messages]);
+
+  useEffect(() => {
     if (boxRef.current) boxRef.current.scrollTop = boxRef.current.scrollHeight;
   }, [messages, sending]);
+
+  function clearChat() {
+    STORAGE.removeItem(STORAGE_KEY);
+    setMessages(defaultMessages);
+    setInput("");
+  }
 
   function addBot(payload) {
     setMessages((m) => [
@@ -43,7 +77,10 @@ export default function Chatbot() {
     try {
       const r = await fetch(`${API}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...userAuthHeader(), // ✅ JWT header
+        },
         body: JSON.stringify({ message: msg }),
       });
 
@@ -66,7 +103,6 @@ export default function Chatbot() {
   }
 
   function onKeyDown(e) {
-    // Enter = send, Shift+Enter = new line
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -136,8 +172,12 @@ export default function Chatbot() {
     <div>
       <HeroHeader
         title="Hii 🤗 Chat with Me... 💬"
-        subtitle="Ask questions and get answers 😉💎."
-        right={<span className="badge green">For Education</span>}
+        subtitle="Ask questions and get answers 😉💎"
+        right={
+          <button className="button secondary" onClick={clearChat} disabled={sending}>
+            New Chat
+          </button>
+        }
       />
 
       <div className="glass-card chat-wrap">

@@ -381,11 +381,11 @@ function formatAnswer(message, keywords, gems, locations, chunks) {
   if (bestGem) {
     let out = `💎 Gem profile (best match):\n`;
     out += `Name: ${bestGem.name}\n`;
-    out += `Type: ${bestGem.gem_type || "-"}\n`;
+    out += `Variety: ${bestGem.gem_type || "-"}\n`;
     out += `Color: ${bestGem.color || "-"}\n`;
     out += `Hardness: ${bestGem.hardness || "-"}\n`;
     out += `Origin: ${bestGem.origin || "-"}\n`;
-    out += `Details: ${bestGem.description || "-"}\n`;
+    out += `Description: ${bestGem.description || "-"}\n`;
     if (bestGem.image_url) out += `Image: ${bestGem.image_url}\n`;
 
     return addChunks(out, chunks);

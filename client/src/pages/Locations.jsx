@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import HeroHeader from "../components/HeroHeader";
+import { useAuth } from "../auth/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Locations() {
+  const { userAuthHeader } = useAuth();
+
   const [locations, setLocations] = useState([]);
   const [q, setQ] = useState("");
   const [type, setType] = useState("all");
 
   useEffect(() => {
-    fetch(`${API}/api/locations`)
+    fetch(`${API}/api/locations`, {
+      headers: { ...userAuthHeader() },
+    })
       .then((r) => r.json())
       .then(setLocations)
       .catch(console.error);
@@ -34,7 +39,6 @@ export default function Locations() {
         right={<span className="badge blue">{filtered.length} results</span>}
       />
 
-      {/* Filters */}
       <div className="glass-card admin-section">
         <div className="row">
           <input
@@ -57,13 +61,15 @@ export default function Locations() {
             <option value="mining">Mining</option>
           </select>
 
-          <button className="button secondary" onClick={() => { setQ(""); setType("all"); }}>
+          <button
+            className="button secondary"
+            onClick={() => { setQ(""); setType("all"); }}
+          >
             Reset
           </button>
         </div>
       </div>
 
-      {/* Table */}
       <div className="glass-card admin-section table-wrap" style={{ marginTop: 14 }}>
         <table className="table">
           <thead>
@@ -80,11 +86,7 @@ export default function Locations() {
             {filtered.map((l) => (
               <tr key={l.id}>
                 <td style={{ fontWeight: 900 }}>{l.name}</td>
-                <td>
-                  <span className="badge">
-                    {l.location_type}
-                  </span>
-                </td>
+                <td>{l.location_type}</td>
                 <td>{l.district || "-"}</td>
                 <td style={{ whiteSpace: "normal", lineHeight: 1.4 }}>
                   {l.address || "-"}

@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
 import HeroHeader from "../components/HeroHeader";
+import { useAuth } from "../auth/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-function getJsonHeaders(adminKey) {
-  return {
-    "Content-Type": "application/json",
-    ...(adminKey ? { "x-admin-key": adminKey } : {}),
-  };
-}
-
 export default function Admin() {
-  const [adminKey, setAdminKey] = useState(localStorage.getItem("ADMIN_KEY") || "");
+  const { adminAuthHeader, logoutAdmin } = useAuth();
+
   const [tab, setTab] = useState("gems");
   const [error, setError] = useState("");
 
@@ -56,10 +51,15 @@ export default function Admin() {
     language: "en",
   });
 
-  const headers = getJsonHeaders(adminKey);
+  function jsonHeaders() {
+    return {
+      "Content-Type": "application/json",
+      ...adminAuthHeader(),
+    };
+  }
 
   async function fetchJson(url) {
-    const r = await fetch(url, { headers });
+    const r = await fetch(url, { headers: { ...adminAuthHeader() } });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error || data.message || `HTTP ${r.status}`);
     return data;
@@ -86,13 +86,7 @@ export default function Admin() {
 
   useEffect(() => {
     loadAll();
-    // eslint-disable-next-line
   }, []);
-
-  function saveKey() {
-    localStorage.setItem("ADMIN_KEY", adminKey);
-    loadAll();
-  }
 
   /* ---------- Gems CRUD ---------- */
 
@@ -107,15 +101,17 @@ export default function Admin() {
 
     try {
       if (gemForm.id) {
-        await fetch(`${API}/api/admin/gems/${gemForm.id}`, {
+        const r = await fetch(`${API}/api/admin/gems/${gemForm.id}`, {
           method: "PUT",
-          headers,
+          headers: jsonHeaders(),
           body: JSON.stringify(payload),
         });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || data.message || "Update failed");
       } else {
         const r = await fetch(`${API}/api/admin/gems`, {
           method: "POST",
-          headers,
+          headers: jsonHeaders(),
           body: JSON.stringify(payload),
         });
         const data = await r.json().catch(() => ({}));
@@ -133,7 +129,10 @@ export default function Admin() {
     if (!confirm("Delete this gem?")) return;
     setError("");
     try {
-      const r = await fetch(`${API}/api/admin/gems/${id}`, { method: "DELETE", headers });
+      const r = await fetch(`${API}/api/admin/gems/${id}`, {
+        method: "DELETE",
+        headers: { ...adminAuthHeader() },
+      });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || data.message || "Delete failed");
       await loadAll();
@@ -167,7 +166,7 @@ export default function Admin() {
 
       const r = await fetch(`${API}/api/admin/gems/${gemId}/image`, {
         method: "POST",
-        headers: adminKey ? { "x-admin-key": adminKey } : {},
+        headers: { ...adminAuthHeader() }, // ✅ Authorization only (no Content-Type)
         body: fd,
       });
 
@@ -196,21 +195,21 @@ export default function Admin() {
     };
 
     try {
-      if (locForm.id) {
-        await fetch(`${API}/api/admin/locations/${locForm.id}`, {
-          method: "PUT",
-          headers,
-          body: JSON.stringify(payload),
-        });
-      } else {
-        const r = await fetch(`${API}/api/admin/locations`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(data.error || data.message || "Create failed");
-      }
+      const url = locForm.id
+        ? `${API}/api/admin/locations/${locForm.id}`
+        : `${API}/api/admin/locations`;
+
+      const method = locForm.id ? "PUT" : "POST";
+
+      const r = await fetch(url, {
+        method,
+        headers: jsonHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || data.message || "Save failed");
+
       clearLocForm();
       await loadAll();
     } catch (e2) {
@@ -222,7 +221,10 @@ export default function Admin() {
     if (!confirm("Delete this location?")) return;
     setError("");
     try {
-      const r = await fetch(`${API}/api/admin/locations/${id}`, { method: "DELETE", headers });
+      const r = await fetch(`${API}/api/admin/locations/${id}`, {
+        method: "DELETE",
+        headers: { ...adminAuthHeader() },
+      });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || data.message || "Delete failed");
       await loadAll();
@@ -257,21 +259,20 @@ export default function Admin() {
     };
 
     try {
-      if (chunkForm.id) {
-        await fetch(`${API}/api/admin/chunks/${chunkForm.id}`, {
-          method: "PUT",
-          headers,
-          body: JSON.stringify(payload),
-        });
-      } else {
-        const r = await fetch(`${API}/api/admin/chunks`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(data.error || data.message || "Create failed");
-      }
+      const url = chunkForm.id
+        ? `${API}/api/admin/chunks/${chunkForm.id}`
+        : `${API}/api/admin/chunks`;
+      const method = chunkForm.id ? "PUT" : "POST";
+
+      const r = await fetch(url, {
+        method,
+        headers: jsonHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || data.message || "Save failed");
+
       clearChunkForm();
       await loadAll();
     } catch (e2) {
@@ -283,7 +284,10 @@ export default function Admin() {
     if (!confirm("Delete this chunk?")) return;
     setError("");
     try {
-      const r = await fetch(`${API}/api/admin/chunks/${id}`, { method: "DELETE", headers });
+      const r = await fetch(`${API}/api/admin/chunks/${id}`, {
+        method: "DELETE",
+        headers: { ...adminAuthHeader() },
+      });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || data.message || "Delete failed");
       await loadAll();
@@ -311,28 +315,21 @@ export default function Admin() {
       <HeroHeader
         title="Admin Panel"
         subtitle="Manage gems, locations, knowledge chunks and upload gem images."
-        right={<span className="badge purple">Secure Admin</span>}
+        right={
+          <button className="button danger" onClick={logoutAdmin}>
+            Logout Admin
+          </button>
+        }
       />
 
       <div className="glass-card admin-section">
-        <div className="row">
-          <input
-            className="input"
-            value={adminKey}
-            onChange={(e) => setAdminKey(e.target.value)}
-            placeholder="Admin Key (x-admin-key)"
-            style={{ maxWidth: 260 }}
-          />
-          <button className="button" onClick={saveKey}>Save Key</button>
-          <button className="button secondary" onClick={loadAll}>Refresh</button>
-        </div>
-
-        {error && <div className="alert" style={{ marginTop: 12 }}>Admin error: {error}</div>}
+        {error && <div className="alert" style={{ marginTop: 0 }}>Admin error: {error}</div>}
 
         <div className="admin-tabs">
           <button className={`tab-btn ${tab === "gems" ? "active" : ""}`} onClick={() => setTab("gems")}>Gems</button>
           <button className={`tab-btn ${tab === "locations" ? "active" : ""}`} onClick={() => setTab("locations")}>Locations</button>
           <button className={`tab-btn ${tab === "chunks" ? "active" : ""}`} onClick={() => setTab("chunks")}>Knowledge Chunks</button>
+          <button className="button secondary" onClick={loadAll}>Refresh</button>
         </div>
       </div>
 
@@ -455,7 +452,7 @@ export default function Admin() {
                   <tr key={l.id}>
                     <td>{l.id}</td>
                     <td style={{ fontWeight: 900 }}>{l.name}</td>
-                    <td><span className="badge">{l.location_type}</span></td>
+                    <td>{l.location_type}</td>
                     <td>{l.district || "-"}</td>
                     <td>
                       <button className="button secondary" onClick={() => setLocForm({
@@ -519,7 +516,7 @@ export default function Admin() {
                 {chunks.map((c) => (
                   <tr key={c.id}>
                     <td>{c.id}</td>
-                    <td><span className="badge">{c.entity_type}</span></td>
+                    <td>{c.entity_type}</td>
                     <td>{c.entity_id ?? ""}</td>
                     <td style={{ fontWeight: 900 }}>{c.title}</td>
                     <td>

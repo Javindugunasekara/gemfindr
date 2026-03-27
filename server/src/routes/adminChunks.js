@@ -1,16 +1,14 @@
 const express = require("express");
 const pool = require("../db");
-const adminAuth = require("../middleware/adminAuth");
+const { requireAdmin } = require("../middleware/auth"); // ✅ JWT admin middleware
 
 const router = express.Router();
-router.use(adminAuth);
+router.use(requireAdmin); // ✅ protect all routes with admin JWT
 
 // GET /api/admin/chunks
 router.get("/", async (req, res, next) => {
   try {
-    const [rows] = await pool.query(
-      "SELECT * FROM knowledge_chunks ORDER BY id DESC"
-    );
+    const [rows] = await pool.query("SELECT * FROM knowledge_chunks ORDER BY id DESC");
     res.json(rows);
   } catch (err) {
     next(err);
@@ -20,16 +18,7 @@ router.get("/", async (req, res, next) => {
 // POST /api/admin/chunks
 router.post("/", async (req, res, next) => {
   try {
-    const {
-      entity_type,
-      entity_id,
-      title,
-      content,
-      tags,
-      source,
-      reliability,
-      language,
-    } = req.body;
+    const { entity_type, entity_id, title, content, tags, source, reliability, language } = req.body;
 
     if (!entity_type || !title || !content) {
       return res.status(400).json({ message: "entity_type, title, content are required" });
@@ -62,16 +51,7 @@ router.post("/", async (req, res, next) => {
 router.put("/:id", async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const {
-      entity_type,
-      entity_id,
-      title,
-      content,
-      tags,
-      source,
-      reliability,
-      language,
-    } = req.body;
+    const { entity_type, entity_id, title, content, tags, source, reliability, language } = req.body;
 
     if (!entity_type || !title || !content) {
       return res.status(400).json({ message: "entity_type, title, content are required" });

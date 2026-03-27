@@ -1,9 +1,9 @@
 const express = require("express");
 const pool = require("../db");
-const adminAuth = require("../middleware/adminAuth");
+const { requireAdmin } = require("../middleware/auth"); // ✅ JWT admin middleware
 
 const router = express.Router();
-router.use(adminAuth);
+router.use(requireAdmin); // ✅ protect all routes with admin JWT
 
 // GET /api/admin/locations
 router.get("/", async (req, res, next) => {
