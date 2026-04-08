@@ -35,7 +35,6 @@ export default function AdminLogin() {
           </div>
         </form>
         <div style={{ marginTop: 10, color: "rgba(255,255,255,.75)", fontWeight: 700 }}>
-          Use an account with role = <b>admin</b>.
         </div>
       </div>
     </div>
